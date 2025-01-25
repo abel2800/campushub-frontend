@@ -1,0 +1,18 @@
+/* overrides.css */
+.ant-menu-item {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.ant-card {
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ant-card-body {
+  padding: 20px;
+}
+
+.ant-btn {
+  border-radius: 4px;
+}
