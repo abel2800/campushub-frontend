@@ -1,37 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Card, Button, Input, List, Typography, Row, Col, Avatar, 
-  Space, message, Upload, Modal 
+  Layout, 
+  Card, 
+  Avatar, 
+  Input, 
+  Button, 
+  Space, 
+  List,
+  Upload,
+  message,
+  Typography
 } from 'antd';
 import { 
-  LikeOutlined, CommentOutlined, SendOutlined,
-  UploadOutlined, PictureOutlined 
+  LikeOutlined, 
+  CommentOutlined, 
+  UploadOutlined,
+  UserOutlined
 } from '@ant-design/icons';
-import api from '../services/api';
+import axios from '../utils/axios';
 
-const { Text } = Typography;
+const { Content } = Layout;
 const { TextArea } = Input;
-
-// Custom Comment Component
-const CommentItem = ({ comment }) => (
-  <div style={{ display: 'flex', marginBottom: '16px' }}>
-    <Avatar src={comment.user.avatarUrl} style={{ marginRight: '12px' }} />
-    <div>
-      <Text strong>{comment.user.username}</Text>
-      <Text style={{ marginLeft: '8px' }}>{comment.content}</Text>
-    </div>
-  </div>
-);
+const { Text } = Typography;
 
 const SocialMediaPage = () => {
-  const [newPost, setNewPost] = useState('');
   const [posts, setPosts] = useState([]);
+  const [newPost, setNewPost] = useState('');
   const [fileList, setFileList] = useState([]);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [activeCommentPost, setActiveCommentPost] = useState(null);
 
   useEffect(() => {
     fetchPosts();
@@ -39,210 +35,133 @@ const SocialMediaPage = () => {
 
   const fetchPosts = async () => {
     try {
-      const response = await api.get('/api/posts/feed');
+      const response = await axios.get('/api/posts');
       setPosts(response.data);
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      message.error('Failed to load posts');
+      message.error('Failed to fetch posts');
     }
   };
 
-  const handlePostSubmit = async () => {
+  const handlePost = async () => {
     if (!newPost.trim() && fileList.length === 0) {
-      message.warning('Please add some text or an image to post');
       return;
     }
 
+    setLoading(true);
     try {
-      setLoading(true);
       const formData = new FormData();
-      formData.append('caption', newPost);
-      
+      formData.append('content', newPost);
       if (fileList.length > 0) {
         formData.append('image', fileList[0].originFileObj);
       }
 
-      const response = await api.post('/api/posts/create', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setPosts([response.data, ...posts]);
+      await axios.post('/api/posts', formData);
       setNewPost('');
       setFileList([]);
-      message.success('Post created successfully!');
+      await fetchPosts();
+      message.success('Post created successfully');
     } catch (error) {
-      console.error('Error creating post:', error);
       message.error('Failed to create post');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePreview = async (file) => {
-    if (!file.url && !file.preview) {
-      file.preview = await getBase64(file.originFileObj);
-    }
-    setPreviewImage(file.url || file.preview);
-    setPreviewVisible(true);
-  };
-
-  const uploadButton = (
-    <div>
-      <PictureOutlined />
-      <div style={{ marginTop: 8 }}>Upload</div>
-    </div>
-  );
-
   const handleLike = async (postId) => {
     try {
-      await api.post(`/api/posts/${postId}/like`);
-      fetchPosts(); // Refresh posts to update likes
+      await axios.post(`/api/posts/${postId}/like`);
+      await fetchPosts();
     } catch (error) {
-      console.error('Error liking post:', error);
       message.error('Failed to like post');
     }
   };
 
-  const handleComment = async (postId) => {
-    if (!commentText.trim()) return;
-
-    try {
-      await api.post(`/api/posts/${postId}/comment`, {
-        content: commentText
-      });
-      setCommentText('');
-      setActiveCommentPost(null);
-      fetchPosts(); // Refresh posts to update comments
-      message.success('Comment added successfully!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      message.error('Failed to add comment');
-    }
+  const uploadProps = {
+    beforeUpload: (file) => {
+      const isImage = file.type.startsWith('image/');
+      if (!isImage) {
+        message.error('You can only upload image files!');
+        return false;
+      }
+      return false;
+    },
+    onChange: ({ fileList }) => setFileList(fileList),
+    fileList,
+    maxCount: 1
   };
 
   return (
-    <div style={{ padding: '50px' }}>
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={24} md={16} lg={12} xl={12}>
-          <Card>
-            <TextArea
-              rows={4}
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="What's on your mind?"
-            />
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onPreview={handlePreview}
-              onChange={({ fileList }) => setFileList(fileList)}
-              beforeUpload={() => false}
-              maxCount={1}
-            >
-              {fileList.length >= 1 ? null : uploadButton}
+    <Content style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
+      <Card style={{ marginBottom: 24 }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <TextArea
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
+            placeholder="What's on your mind?"
+            autoSize={{ minRows: 3, maxRows: 6 }}
+          />
+          <Space>
+            <Upload {...uploadProps} listType="picture">
+              <Button icon={<UploadOutlined />}>Upload Image</Button>
             </Upload>
             <Button 
-              onClick={handlePostSubmit} 
               type="primary" 
-              style={{ marginTop: '10px' }}
+              onClick={handlePost} 
               loading={loading}
             >
               Post
             </Button>
-          </Card>
+          </Space>
+        </Space>
+      </Card>
 
-          <List
-            itemLayout="vertical"
-            size="large"
-            dataSource={posts}
-            renderItem={(post) => (
-              <Card 
-                style={{ marginTop: '16px' }}
-                actions={[
-                  <Button 
-                    type="text" 
-                    icon={<LikeOutlined />}
-                    onClick={() => handleLike(post.id)}
-                  >
-                    {post.likesCount} Likes
-                  </Button>,
-                  <Button 
-                    type="text" 
-                    icon={<CommentOutlined />}
-                    onClick={() => setActiveCommentPost(post.id)}
-                  >
-                    {post.commentsCount} Comments
-                  </Button>
-                ]}
-              >
-                <Card.Meta
-                  avatar={<Avatar src={post.user.avatarUrl} />}
-                  title={post.user.username}
-                  description={post.caption}
+      <List
+        itemLayout="vertical"
+        size="large"
+        dataSource={posts}
+        renderItem={(post) => (
+          <Card style={{ marginBottom: 16 }}>
+            <Card.Meta
+              avatar={
+                <Avatar icon={<UserOutlined />}>
+                  {post.user?.username?.[0]}
+                </Avatar>
+              }
+              title={post.user?.username}
+              description={new Date(post.createdAt).toLocaleString()}
+            />
+            <div style={{ margin: '16px 0' }}>
+              <Text>{post.content}</Text>
+            </div>
+            {post.image && (
+              <div style={{ marginBottom: 16 }}>
+                <img
+                  src={post.image}
+                  alt="Post"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: 400,
+                    objectFit: 'cover'
+                  }}
                 />
-                
-                {post.imageUrl && (
-                  <div style={{ marginTop: '16px' }}>
-                    <img 
-                      src={post.imageUrl} 
-                      alt="Post" 
-                      style={{ width: '100%', borderRadius: '8px' }} 
-                    />
-                  </div>
-                )}
-
-                {activeCommentPost === post.id && (
-                  <div style={{ marginTop: '16px' }}>
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={post.comments}
-                      renderItem={comment => (
-                        <CommentItem comment={comment} />
-                      )}
-                    />
-                    <Space.Compact style={{ width: '100%', marginTop: '12px' }}>
-                      <Input
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        placeholder="Write a comment..."
-                        onPressEnter={() => handleComment(post.id)}
-                      />
-                      <Button 
-                        type="primary" 
-                        icon={<SendOutlined />}
-                        onClick={() => handleComment(post.id)}
-                      />
-                    </Space.Compact>
-                  </div>
-                )}
-              </Card>
+              </div>
             )}
-          />
-        </Col>
-      </Row>
-
-      <Modal
-        visible={previewVisible}
-        title="Preview"
-        footer={null}
-        onCancel={() => setPreviewVisible(false)}
-      >
-        <img alt="preview" style={{ width: '100%' }} src={previewImage} />
-      </Modal>
-    </div>
+            <Space>
+              <Button 
+                icon={<LikeOutlined />}
+                onClick={() => handleLike(post.id)}
+              >
+                {post.likes || 0} Likes
+              </Button>
+              <Button icon={<CommentOutlined />}>
+                {post.comments?.length || 0} Comments
+              </Button>
+            </Space>
+          </Card>
+        )}
+      />
+    </Content>
   );
-};
-
-// Helper function to convert file to base64
-const getBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
 };
 
 export default SocialMediaPage; 

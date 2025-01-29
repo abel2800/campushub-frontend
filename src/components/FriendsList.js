@@ -1,6 +1,6 @@
 import React from 'react';
-import { List, Avatar, Button, Space, Card, Typography } from 'antd';
-import { MessageOutlined, DeleteOutlined } from '@ant-design/icons';
+import { List, Avatar, Button, Space } from 'antd';
+import { MessageOutlined, UserOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from '../utils/axios';
 import { toast } from 'react-toastify';
@@ -8,56 +8,44 @@ import { toast } from 'react-toastify';
 const FriendsList = ({ friends = [], onFriendRemoved }) => {
   const navigate = useNavigate();
 
-  const handleMessage = async (friendData) => {
+  const handleMessage = async (friend) => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Token when messaging:', token);
-      
       if (!token) {
-        toast.error('Not authenticated');
         navigate('/login');
         return;
       }
 
-      const response = await axios.post('/api/chats/create', {
-        participantId: friendData.id
+      // First try to get existing chat or create new one
+      const response = await axios.post('/api/messages/create', {
+        participantId: friend.friend.id
       });
 
-      if (response.data && response.data.id) {
-        navigate('/chat', {
-          state: {
-            chatId: response.data.id,
-            participant: {
-              id: friendData.id,
-              username: friendData.username,
-              department: friendData.department
-            }
-          }
-        });
-      } else {
-        toast.error('Failed to create chat');
-      }
+      // Navigate to chat page with friend data
+      navigate('/chat', {
+        state: {
+          participant: friend.friend,
+          messages: response.data ? [response.data] : []
+        },
+        replace: false
+      });
     } catch (error) {
-      console.error('Chat creation error:', error);
+      console.error('Error starting chat:', error);
+      // Show error toast but don't redirect
       if (error.response?.status === 401) {
-        toast.error('Please login again');
+        toast.error('Please log in again');
         navigate('/login');
       } else {
-        toast.error('Failed to start chat');
+        toast.error('Failed to start chat. Please try again.');
       }
     }
   };
 
   const handleRemoveFriend = async (friendId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/friends/${friendId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      toast.success('Friend removed');
-      if (onFriendRemoved) {
-        onFriendRemoved();
-      }
+      await axios.delete(`/api/friends/${friendId}`);
+      onFriendRemoved(friendId);
+      toast.success('Friend removed successfully');
     } catch (error) {
       console.error('Error removing friend:', error);
       toast.error('Failed to remove friend');
@@ -84,43 +72,45 @@ const FriendsList = ({ friends = [], onFriendRemoved }) => {
   return (
     <List
       dataSource={friends}
-      renderItem={(friend) => {
-        // Safety check for friend object
-        if (!friend || !friend.friend) {
-          return null;
-        }
-
-        const friendData = friend.friend;
-        return (
-          <List.Item key={friendData.id}>
-            <Card style={{ width: '100%' }}>
-              <List.Item.Meta
-                avatar={
-                  <Avatar>{friendData.username?.[0]}</Avatar>
-                }
-                title={friendData.username}
-                description={friendData.department}
-              />
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<MessageOutlined />}
-                  onClick={() => handleMessage(friendData)}
-                >
-                  Message
-                </Button>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleRemoveFriend(friendData.id)}
-                >
-                  Remove
-                </Button>
-              </Space>
-            </Card>
-          </List.Item>
-        );
-      }}
+      renderItem={(friend) => (
+        <List.Item
+          actions={[
+            <Button
+              key="message"
+              type="primary"
+              icon={<MessageOutlined />}
+              onClick={() => handleMessage(friend)}
+            >
+              Message
+            </Button>,
+            <Button
+              key="profile"
+              icon={<UserOutlined />}
+              onClick={() => navigate(`/profile/${friend.friend.id}`)}
+            >
+              View Profile
+            </Button>,
+            <Button
+              key="remove"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleRemoveFriend(friend.friend.id)}
+            >
+              Remove
+            </Button>
+          ]}
+        >
+          <List.Item.Meta
+            avatar={
+              <Avatar icon={<UserOutlined />}>
+                {friend.friend.username[0]}
+              </Avatar>
+            }
+            title={friend.friend.username}
+            description={friend.friend.department}
+          />
+        </List.Item>
+      )}
     />
   );
 };

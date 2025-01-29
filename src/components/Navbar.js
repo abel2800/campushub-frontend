@@ -1,19 +1,43 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React from 'react';
+import { Menu } from 'antd';
+import { 
+  HomeOutlined, 
+  BookOutlined, 
+  TeamOutlined, 
+  MessageOutlined,
+  GlobalOutlined,
+  UserOutlined
+} from '@ant-design/icons';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
+  const location = useLocation();
+
   return (
-    <nav style={{ padding: "10px", backgroundColor: "#001529", color: "#fff" }}>
-      <ul style={{ display: "flex", listStyle: "none", justifyContent: "space-around" }}>
-        <li><Link to="/home" style={{ color: "white" }}>Home</Link></li>
-        <li><Link to="/courses" style={{ color: "white" }}>Courses</Link></li>
-        <li><Link to="/social-media" style={{ color: "white" }}>Social Media</Link></li>
-        <li><Link to="/chat" style={{ color: "white" }}>Chat</Link></li>
-        <li><Link to="/grades" style={{ color: "white" }}>Grades</Link></li>
-        <li><Link to="/exams" style={{ color: "white" }}>Exams</Link></li>
-        <li><Link to="/my-learning" style={{ color: "white" }}>My Learning</Link></li>
-      </ul>
-    </nav>
+    <Menu 
+      mode="horizontal" 
+      selectedKeys={[location.pathname]}
+      style={{ position: 'sticky', top: 0, zIndex: 1, width: '100%' }}
+    >
+      <Menu.Item key="/" icon={<HomeOutlined />}>
+        <Link to="/">Dashboard</Link>
+      </Menu.Item>
+      <Menu.Item key="/courses" icon={<BookOutlined />}>
+        <Link to="/courses">Courses</Link>
+      </Menu.Item>
+      <Menu.Item key="/social" icon={<GlobalOutlined />}>
+        <Link to="/social">Social Media</Link>
+      </Menu.Item>
+      <Menu.Item key="/friends" icon={<TeamOutlined />}>
+        <Link to="/friends">Friends</Link>
+      </Menu.Item>
+      <Menu.Item key="/chat" icon={<MessageOutlined />}>
+        <Link to="/chat">Chat</Link>
+      </Menu.Item>
+      <Menu.Item key="/profile" icon={<UserOutlined />}>
+        <Link to="/profile">Profile</Link>
+      </Menu.Item>
+    </Menu>
   );
 };
 

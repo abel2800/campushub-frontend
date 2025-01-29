@@ -1,132 +1,140 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Avatar, Typography, Tabs, List, Button, Input, Space, message } from 'antd';
-import { UserOutlined, LikeOutlined, CommentOutlined, SendOutlined } from '@ant-design/icons';
-import api from '../services/api';
-import { useParams, useNavigate } from 'react-router-dom';
+import { 
+  Layout, 
+  Card, 
+  Avatar, 
+  Tabs, 
+  List, 
+  Button, 
+  Space, 
+  Typography,
+  Statistic,
+  Row,
+  Col,
+  Image,
+  Divider 
+} from 'antd';
+import { 
+  UserOutlined, 
+  SettingOutlined,
+  EditOutlined,
+  PictureOutlined
+} from '@ant-design/icons';
+import { useParams } from 'react-router-dom';
+import axios from '../utils/axios';
+import { toast } from 'react-toastify';
 
+const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
-const { TextArea } = Input;
 
 const UserProfile = () => {
-  const [profile, setProfile] = useState(null);
-  const [newComment, setNewComment] = useState('');
   const { userId } = useParams();
-  const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProfile();
+    fetchUserPosts();
   }, [userId]);
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get(`/api/users/profile/${userId}`);
+      const response = await axios.get(`/api/users/${userId}`);
       setProfile(response.data);
     } catch (error) {
-      message.error('Failed to load profile');
+      toast.error('Failed to fetch profile');
     }
   };
 
-  const handleLike = async (postId) => {
+  const fetchUserPosts = async () => {
     try {
-      await api.post(`/api/posts/${postId}/like`);
-      fetchProfile();
+      const response = await axios.get(`/api/posts/user/${userId}`);
+      setPosts(response.data);
     } catch (error) {
-      message.error('Failed to like post');
+      toast.error('Failed to fetch posts');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleComment = async (postId) => {
-    try {
-      await api.post(`/api/posts/${postId}/comment`, { content: newComment });
-      setNewComment('');
-      fetchProfile();
-    } catch (error) {
-      message.error('Failed to add comment');
-    }
-  };
-
-  const handleMessage = () => {
-    navigate('/dashboard/chat', { state: { userId: profile.id } });
-  };
-
-  if (!profile) return null;
+  if (loading) return null;
 
   return (
-    <div style={{ padding: '24px' }}>
+    <Content style={{ padding: '24px' }}>
       <Card>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div style={{ textAlign: 'center' }}>
-            <Avatar size={128} src={profile.avatarUrl} icon={<UserOutlined />} />
-            <Title level={2}>{profile.firstName} {profile.lastName}</Title>
-            <Text type="secondary">@{profile.username}</Text>
-            <div style={{ marginTop: '16px' }}>
-              <Button type="primary" onClick={handleMessage}>
-                Send Message
-              </Button>
-            </div>
-          </div>
-
-          <Tabs defaultActiveKey="1">
-            <TabPane tab="Posts" key="1">
-              <List
-                itemLayout="vertical"
-                dataSource={profile.Posts}
-                renderItem={post => (
-                  <Card style={{ marginBottom: '16px' }}>
-                    <div>{post.content}</div>
-                    <div style={{ marginTop: '16px' }}>
-                      <Space>
-                        <Button 
-                          icon={<LikeOutlined />} 
-                          onClick={() => handleLike(post.id)}
-                        >
-                          {post.Likes?.length || 0}
-                        </Button>
-                        <Button icon={<CommentOutlined />}>
-                          {post.Comments?.length || 0}
-                        </Button>
-                      </Space>
-                    </div>
-
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={post.Comments}
-                      renderItem={comment => (
-                        <List.Item>
-                          <List.Item.Meta
-                            avatar={<Avatar src={comment.User.avatarUrl} />}
-                            title={comment.User.username}
-                            description={comment.content}
-                          />
-                        </List.Item>
-                      )}
-                    />
-
-                    <div style={{ marginTop: '16px' }}>
-                      <TextArea
-                        rows={2}
-                        value={newComment}
-                        onChange={e => setNewComment(e.target.value)}
-                        placeholder="Write a comment..."
-                      />
-                      <Button 
-                        type="primary" 
-                        icon={<SendOutlined />}
-                        onClick={() => handleComment(post.id)}
-                        style={{ marginTop: '8px' }}
-                      >
-                        Comment
-                      </Button>
-                    </div>
-                  </Card>
-                )}
-              />
-            </TabPane>
-          </Tabs>
-        </Space>
+        <Row gutter={24}>
+          <Col span={8}>
+            <Space direction="vertical" align="center" style={{ width: '100%' }}>
+              <Avatar size={164} src={profile?.avatar}>
+                {profile?.username[0]}
+              </Avatar>
+              <Title level={2}>{profile?.username}</Title>
+              <Text type="secondary">{profile?.department}</Text>
+            </Space>
+          </Col>
+          <Col span={16}>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Statistic title="Posts" value={posts.length} />
+              </Col>
+              <Col span={8}>
+                <Statistic title="Friends" value={profile?.friendsCount} />
+              </Col>
+              <Col span={8}>
+                <Statistic title="Courses" value={profile?.coursesCount} />
+              </Col>
+            </Row>
+            <Divider />
+            <Text>{profile?.bio}</Text>
+          </Col>
+        </Row>
       </Card>
-    </div>
+
+      <Tabs defaultActiveKey="posts" style={{ marginTop: '24px' }}>
+        <TabPane tab="Posts" key="posts">
+          <List
+            grid={{ gutter: 16, column: 3 }}
+            dataSource={posts}
+            renderItem={(post) => (
+              <List.Item>
+                <Card
+                  cover={
+                    post.image && (
+                      <Image
+                        alt="post"
+                        src={post.image}
+                        style={{ height: 200, objectFit: 'cover' }}
+                      />
+                    )
+                  }
+                >
+                  <Card.Meta
+                    title={post.createdAt}
+                    description={post.content}
+                  />
+                </Card>
+              </List.Item>
+            )}
+          />
+        </TabPane>
+        <TabPane tab="About" key="about">
+          <Card>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Title level={4}>About Me</Title>
+              <Text>{profile?.about}</Text>
+              <Divider />
+              <Title level={4}>Department</Title>
+              <Text>{profile?.department}</Text>
+              <Divider />
+              <Title level={4}>Interests</Title>
+              <Text>{profile?.interests}</Text>
+            </Space>
+          </Card>
+        </TabPane>
+      </Tabs>
+    </Content>
   );
 };
 

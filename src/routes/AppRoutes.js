@@ -10,20 +10,56 @@ import CreateAccount from '../components/CreateAccount';
 import Login from '../components/Login';
 import AddFriend from '../components/AddFriend';
 
+// Protected Route component
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 const AppRoutes = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/courses" element={<CoursePage />} />
-        <Route path="/social-media" element={<SocialMediaPage />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/friends" element={<FriendsPage />} />
-        <Route path="/add-friend" element={<AddFriend />} />
         <Route path="/create-account" element={<CreateAccount />} />
-        <Route path="*" element={<Navigate to="/" />} /> {/* Redirect to landing page if route not found */}
+        
+        {/* Protected Routes */}
+        <Route path="/home" element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/courses" element={
+          <ProtectedRoute>
+            <CoursePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/social-media" element={
+          <ProtectedRoute>
+            <SocialMediaPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/chat" element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/friends" element={
+          <ProtectedRoute>
+            <FriendsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/add-friend" element={
+          <ProtectedRoute>
+            <AddFriend />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

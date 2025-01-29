@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:5000', // or your backend URL
+  baseURL: 'http://localhost:5000'  // Make sure this matches your backend URL
 });
 
-// Add a request interceptor
+// Add request interceptor to add token to all requests
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,13 +19,17 @@ instance.interceptors.request.use(
   }
 );
 
-// Add a response interceptor
+// Add response interceptor to handle token expiration
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Redirect to login if unauthorized
-      window.location.href = '/login';
+      // Only redirect to login if we're not already on the login page
+      // and if the token is actually invalid/expired
+      if (window.location.pathname !== '/login' && !localStorage.getItem('token')) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
