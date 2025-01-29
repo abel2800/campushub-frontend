@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from '../components/LandingPage';
 import HomePage from '../components/HomePage';
-import CoursePage from '../components/CoursePage';
+import CoursePage from '../components/CoursesPage';
 import SocialMediaPage from '../components/SocialMeadiaPage';
 import ChatPage from '../components/chat';
 import FriendsPage from '../pages/friendsPage';

@@ -1,9 +1,10 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from 'antd';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+// Import the correct Ant Design CSS for v5
 import 'antd/dist/reset.css';
-import './index.css'; // Create this file if you don't have it
+import './index.css';
 
 // Add global styles
 const style = document.createElement('style');
@@ -24,13 +25,9 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-const container = document.getElementById('root');
-const root = createRoot(container);
-
+const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <ConfigProvider>
-      <App />
-    </ConfigProvider>
-  </React.StrictMode>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );

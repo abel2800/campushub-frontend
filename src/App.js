@@ -1,89 +1,34 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import HomePage from './components/HomePage';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ConfigProvider } from 'antd';
 import LandingPage from './components/LandingPage';
 import CreateAccount from './components/CreateAccount';
-import CoursesPage from './components/CoursesPage';
-import CourseDetailPage from './components/CourseDetailPage';
-import ChatPage from './components/chat';
-import SocialMediaPage from './components/SocialMeadiaPage';
-import FriendsPage from './components/FriendsPage';
-import ProfilePage from './components/ProfilePage';
-import DashboardContent from './components/DashboardContent';
+import Dashboard from './components/Dashboard';
+import PrivateRoute from './components/PrivateRoute';
+import { NotificationProvider } from './context/NotificationContext';
+import Chat from './components/ChatPage';
 
-const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
-  return <HomePage>{children}</HomePage>;
-};
-
-const App = () => {
+function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/create-account" element={<CreateAccount />} />
-        <Route
-          path="/home"
-          element={
-            <PrivateRoute>
-              <DashboardContent />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/courses"
-          element={
-            <PrivateRoute>
-              <CoursesPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/courses/:courseId"
-          element={
-            <PrivateRoute>
-              <CourseDetailPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <PrivateRoute>
-              <ChatPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/social"
-          element={
-            <PrivateRoute>
-              <SocialMediaPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/friends"
-          element={
-            <PrivateRoute>
-              <FriendsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <PrivateRoute>
-              <ProfilePage />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </Router>
+    <ConfigProvider>
+      <NotificationProvider>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/create-account" element={<CreateAccount />} />
+          <Route
+            path="/dashboard/*"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/chat/:chatId" element={<Chat />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </NotificationProvider>
+    </ConfigProvider>
   );
-};
+}
 
 export default App;
